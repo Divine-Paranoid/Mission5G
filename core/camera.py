@@ -14,7 +14,8 @@ os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "-8"
 
 logger = logging.getLogger("SparshCameraManager")
 
-class SparshCamera:
+# FIX: Class name ko wapas 'CameraManager' kar diya hai taaki main.py ka import breakdown na ho
+class CameraManager:
     def __init__(self, rtsp_url: str = CameraConfig.RTSP_URL):
         self.rtsp_url = rtsp_url
         self.cap: Optional[cv2.VideoCapture] = None
