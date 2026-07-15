@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLLs
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+venv/
+ENV/
+env/
+
+# IDEs and editors
+.idea/
+.history/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Project specific logs and configs
+logs/*.log
+config/local_secrets.yaml
