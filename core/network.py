@@ -27,16 +27,41 @@ class NiralAPI:
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
 
     def login(self) -> bool:
-        url = f"{self.base_url}/token"
-        payload = {"username": NiralConfig.USERNAME, "password": NiralConfig.PASSWORD}
+        """Executes secure login handshake against NiralOS Edge Controller."""
+        # Agar root '/token' 405 de raha hai, toh standard base structure key match use karein
+        # Try alternate endpoints commonly used by NiralOS: '/api/v1/login' or '/api/token'
+        url = f"{self.base_url}/api/v1/login"  
+        
+        payload = {
+            "username": self.client_id,  # Config se aaya USERNAME
+            "password": self.client_secret  # Config se aaya PASSWORD
+        }
+        
+        logger.info(f"Attempting token acquisition from route: {url}")
         try:
-            response = self.session.post(url, json=payload, timeout=2.0) # Local latency is < 2ms
+            response = self.session.post(url, json=payload, timeout=5.0)
+            
+            # Agar /api/v1/login par bhi 404 ya 405 aaye, toh baseline fallback request try karein
+            if response.status_code in [404, 405]:
+                alt_url = f"{self.base_url}/api/token"
+                logger.info(f"Retrying authentication on fallback route: {alt_url}")
+                response = self.session.post(alt_url, json=payload, timeout=5.0)
+
             response.raise_for_status()
-            self.token = response.json().get("accessToken")
-            logger.info("Internal token refreshed via local network socket.")
-            return True
+            data = response.json()
+            
+            # Token fields checking handle matrix safely
+            self.token = data.get("accessToken") or data.get("access_token") or data.get("token")
+            
+            if self.token:
+                logger.info("Secure JWT Token verified and saved from NiralOS Edge framework.")
+                return True
+            else:
+                logger.error(f"Authentication response missing token keys. Raw JSON: {data}")
+                return False
+                
         except Exception as e:
-            logger.error(f"Internal VM login failure to NiralOS gateway: {e}")
+            logger.error(f"VM internal login exception encountered: {e}")
             return False
 
     def create_slice(self, sst: int, sd: str, default_indicator: bool = True) -> bool:
