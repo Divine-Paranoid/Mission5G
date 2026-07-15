@@ -1,5 +1,5 @@
 """
-core/network.py - MEC VM Optimized REST Client for NiralOS 5G Core.
+core/network.py - MEC/Compute VM Optimized REST Client for NiralOS 5G Core.
 """
 import logging
 import requests
@@ -16,11 +16,10 @@ class NiralAPI:
         self.session = requests.Session()
         self.token: Optional[str] = None
         
-        # High-Availability: Retry strategy for local VM inter-process calls
-        # Jab network slice restart hota hai, local API gateway microsecond delay ke liye drop ho sakta hai
+        # Ingress protection for internal virtual switches
         retries = Retry(
             total=5,
-            backoff_factor=0.5,
+            backoff_factor=0.3,
             status_forcelist=[500, 502, 503, 504],
             raise_on_status=False
         )
@@ -28,29 +27,34 @@ class NiralAPI:
 
     def login(self) -> bool:
         """Executes secure login handshake against NiralOS Edge Controller."""
-        # Agar root '/token' 405 de raha hai, toh standard base structure key match use karein
-        # Try alternate endpoints commonly used by NiralOS: '/api/v1/login' or '/api/token'
+        # Hum direct config file se direct values read kar rahe hain taaki koi object attribute error na aaye
         url = f"{self.base_url}/api/v1/login"  
         
         payload = {
-            "username": self.client_id,  # Config se aaya USERNAME
-            "password": self.client_secret  # Config se aaya PASSWORD
+            "username": NiralConfig.USERNAME,
+            "password": NiralConfig.PASSWORD
         }
         
         logger.info(f"Attempting token acquisition from route: {url}")
         try:
             response = self.session.post(url, json=payload, timeout=5.0)
             
-            # Agar /api/v1/login par bhi 404 ya 405 aaye, toh baseline fallback request try karein
+            # Fallback Route 1: Agar root ya api custom layout 405/404 de
             if response.status_code in [404, 405]:
                 alt_url = f"{self.base_url}/api/token"
                 logger.info(f"Retrying authentication on fallback route: {alt_url}")
                 response = self.session.post(alt_url, json=payload, timeout=5.0)
 
+            # Fallback Route 2: Direct token link hit matrix
+            if response.status_code in [404, 405]:
+                direct_url = f"{self.base_url}/token"
+                logger.info(f"Retrying pure POST authentication on route: {direct_url}")
+                response = self.session.post(direct_url, json=payload, timeout=5.0)
+
             response.raise_for_status()
             data = response.json()
             
-            # Token fields checking handle matrix safely
+            # Har possible response key format check karein
             self.token = data.get("accessToken") or data.get("access_token") or data.get("token")
             
             if self.token:
@@ -88,7 +92,7 @@ class NiralAPI:
             }]
         }
         try:
-            res = self.session.post(url, json=payload, headers=headers, timeout=4.0)
+            res = self.session.post(url, json=payload, headers=headers, timeout=5.0)
             return res.status_code in [200, 201]
         except Exception as e:
             logger.error(f"Local dynamic slice creation breakdown: {e}")
@@ -116,7 +120,7 @@ class NiralAPI:
             "mcc": DroneConfig.MCC, "mnc": DroneConfig.MNC
         }
         try:
-            res = self.session.post(url, json=payload, headers=headers, timeout=4.0)
+            res = self.session.post(url, json=payload, headers=headers, timeout=5.0)
             return res.status_code in [200, 201]
         except Exception as e:
             logger.error(f"Local VM internal subscriber map failure: {e}")
@@ -125,7 +129,7 @@ class NiralAPI:
     def health_check(self) -> bool:
         url = f"{self.base_url}/v2/5gcore/overview/cards_core_gnb_ue_graph/range=hour"
         try:
-            res = self.session.get(url, timeout=2.0)
+            res = self.session.get(url, timeout=3.0)
             return res.status_code == 200
         except Exception:
             return False
