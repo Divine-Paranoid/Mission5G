@@ -10,7 +10,7 @@ class SystemConfig:
     LOG_FILE_PATH = "logs/system_orchestrator.log"
 
 class CameraConfig:
-    CAMERA_IP = os.getenv("DTU_SPARSH_CAM_IP", "192.168.128.10")
+    CAMERA_IP = "10.101.0.3"
     USER = "admin"
     PASS = "admin123"
     RTSP_URL = f"rtsp://{USER}:{PASS}@{CAMERA_IP}:554/avstream/channel=1/stream=0.sdp"
