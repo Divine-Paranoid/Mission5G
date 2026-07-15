@@ -26,10 +26,10 @@ class NiralAPI:
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
 
     def login(self) -> bool:
-        """Executes secure login handshake against NiralOS Edge Controller."""
-        # Hum direct config file se direct values read kar rahe hain taaki koi object attribute error na aaye
+        """Executes secure login handshake against NiralOS Edge Controller with multiple formats."""
         url = f"{self.base_url}/api/v1/login"  
         
+        # Standard Payload Dict
         payload = {
             "username": NiralConfig.USERNAME,
             "password": NiralConfig.PASSWORD
@@ -37,24 +37,39 @@ class NiralAPI:
         
         logger.info(f"Attempting token acquisition from route: {url}")
         try:
+            # Format 1: Try Standard JSON Request
             response = self.session.post(url, json=payload, timeout=5.0)
             
-            # Fallback Route 1: Agar root ya api custom layout 405/404 de
-            if response.status_code in [404, 405]:
-                alt_url = f"{self.base_url}/api/token"
-                logger.info(f"Retrying authentication on fallback route: {alt_url}")
-                response = self.session.post(alt_url, json=payload, timeout=5.0)
+            # Format 2: Agar 401/405/404 aaye, toh URL-Encoded Form Data format try karein
+            if response.status_code in [401, 404, 405]:
+                logger.info("Auth rejected/mismatched. Retrying via application/x-www-form-urlencoded form data...")
+                response = self.session.post(url, data=payload, timeout=5.0)
 
-            # Fallback Route 2: Direct token link hit matrix
-            if response.status_code in [404, 405]:
+            # Fallback Route 1: Try alternate endpoint '/api/token' with both formats
+            if response.status_code in [401, 404, 405]:
+                alt_url = f"{self.base_url}/api/token"
+                logger.info(f"Retrying on alternate route: {alt_url} (JSON)")
+                response = self.session.post(alt_url, json=payload, timeout=5.0)
+                if response.status_code in [401, 404, 405]:
+                    response = self.session.post(alt_url, data=payload, timeout=5.0)
+
+            # Fallback Route 2: Try direct root '/token' (Form Data - OAuth2 standard)
+            if response.status_code in [401, 404, 405]:
                 direct_url = f"{self.base_url}/token"
-                logger.info(f"Retrying pure POST authentication on route: {direct_url}")
-                response = self.session.post(direct_url, json=payload, timeout=5.0)
+                logger.info(f"Retrying OAuth2 standard form data on route: {direct_url}")
+                # standard OAuth2 frameworks use grant_type or raw form fields
+                oauth2_payload = {
+                    "grant_type": "password",
+                    "username": NiralConfig.USERNAME,
+                    "password": NiralConfig.PASSWORD
+                }
+                response = self.session.post(direct_url, data=oauth2_payload, timeout=5.0)
+                if response.status_code in [401, 404, 405]:
+                    response = self.session.post(direct_url, json=payload, timeout=5.0)
 
             response.raise_for_status()
             data = response.json()
             
-            # Har possible response key format check karein
             self.token = data.get("accessToken") or data.get("access_token") or data.get("token")
             
             if self.token:
