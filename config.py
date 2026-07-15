@@ -37,9 +37,9 @@ class FusionConfig:
 
 class NiralConfig:
     MOCK_MODE = False
-    BASE_URL = "http://172.16.0.3:8082" 
-    USERNAME = "admin"
-    PASSWORD = "admin@1234"
+    BASE_URL = "http://172.16.0.22" 
+    USERNAME = "Anamika@dtu.ac.in"
+    PASSWORD = "Dtu@001"
     DEFAULT_APN = "ims"
 
 class NetworkPolicyConfig:
