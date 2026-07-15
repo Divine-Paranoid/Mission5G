@@ -14,7 +14,6 @@ os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "-8"
 
 logger = logging.getLogger("SparshCameraManager")
 
-# FIX: Class name ko wapas 'CameraManager' kar diya hai taaki main.py ka import breakdown na ho
 class CameraManager:
     def __init__(self, rtsp_url: str = CameraConfig.RTSP_URL):
         self.rtsp_url = rtsp_url
@@ -45,18 +44,21 @@ class CameraManager:
             logger.critical("Unable to bind camera hardware link over specified network profiles.")
             return False
             
-    def read_frame(self) -> Tuple[bool, Optional[np.ndarray]]:
-        """Reads frame from stream matrix safely."""
+    def get_frame(self) -> Tuple[bool, Optional[np.ndarray]]:
+        """FIX: Added exact method required by main.py to read frames safely."""
         if self.cap is None or not self.cap.isOpened():
             return False, None
             
         ret, frame = self.cap.read()
         if not ret or frame is None:
-            # Short data dropped packet protection retry logic
             time.sleep(0.01)
             ret, frame = self.cap.read()
             
         return ret, frame
+
+    def read_frame(self) -> Tuple[bool, Optional[np.ndarray]]:
+        """Alias method to support fallback calls safely."""
+        return self.get_frame()
         
     def disconnect(self) -> None:
         """Safely releases active camera descriptors."""
