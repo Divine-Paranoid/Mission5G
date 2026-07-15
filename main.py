@@ -127,7 +127,7 @@ def main():
         except Exception as e:
             logger.error(f"Pipeline error crash state intercept: {e}")
             
-    camera.release()
+    camera.disconnect()
     drone.disconnect()
     cv2.destroyAllWindows()
     logger.info("Orchestrator safely offline.")
