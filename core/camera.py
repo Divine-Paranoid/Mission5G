@@ -16,12 +16,10 @@ class CameraManager:
         self.cap: Optional[cv2.VideoCapture] = None
 
     def connect(self) -> bool:
-        """Establishes clean and verified RTSP binding with Sparsh 5G Camera."""
         logger.info(f"Production Mode: Opening hardware binding to Sparsh 5G Camera via FFMPEG stream context: {self.rtsp_url}")
 
         self.cap = cv2.VideoCapture(self.rtsp_url, cv2.CAP_FFMPEG)
 
-        # Dynamic latency stabilization block
         if self.cap.isOpened():
             self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             logger.info("Connection established to camera endpoint target successfully.")

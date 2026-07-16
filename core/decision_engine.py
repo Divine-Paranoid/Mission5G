@@ -19,7 +19,6 @@ class DecisionEngine:
     def evaluate_state(self, camera_has_detections: bool, verification_status: VerificationState) -> MissionState:
         previous_state = self.current_state
 
-        # State Transition Matrix
         if verification_status == VerificationState.VERIFIED:
             self.current_state = MissionState.EMERGENCY
         elif verification_status == VerificationState.NEED_MORE_INFORMATION and camera_has_detections:

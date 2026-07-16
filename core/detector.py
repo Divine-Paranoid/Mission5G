@@ -10,7 +10,6 @@ logger = logging.getLogger("VVDN_ObjectDetector")
 
 @dataclass(frozen=True)
 class DetectionResult:
-    """Immutable structural DTO containing tracking metrics."""
     labels: List[str]
     confidences: np.ndarray
     bounding_boxes: np.ndarray
