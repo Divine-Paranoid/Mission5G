@@ -1,7 +1,3 @@
-"""
-core/decision_engine.py - Policy-Driven 5G Slice Transition State Machine.
-Source of Truth: DoT 100 5G Labs Training Architecture Manuals.
-"""
 import logging
 from enum import Enum
 from typing import Dict, Any

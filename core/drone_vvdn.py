@@ -1,7 +1,3 @@
-"""
-core/drone_vvdn.py - Production MAVLink Driver for the Menthosa Suparna 5G Drone.
-Source of Truth: DoT 100 5G Labs Architecture Manuals.
-"""
 import socket
 import threading
 import time
@@ -25,7 +21,7 @@ class Suparna5GDrone:
         self._running = False
         self._streaming = False
         self._thread: Optional[threading.Thread] = None
-        
+
         # Telemetry State Registers
         self.telemetry = {
             "lat": 0.0, "lon": 0.0, "alt": 0.0, "relative_alt": 0.0,
@@ -39,8 +35,7 @@ class Suparna5GDrone:
             self._socket.bind(("0.0.0.0", self.port))
             self._socket.settimeout(2.0)
             self._running = True
-            
-            # Spawn background thread loop to continuously parse incoming UDP packet buffers
+
             self._thread = threading.Thread(target=self._recv_loop, daemon=True)
             self._thread.start()
             return True
@@ -55,13 +50,11 @@ class Suparna5GDrone:
                 data, _ = self._socket.recvfrom(4096)
                 if len(data) < 12:  # MAVLink v2 headers minimum length constraint
                     continue
-                
-                # Check for standard MAVLink v2 magic byte identifier marker (0xFD)
+
                 if data[0] == 0xFD:
-                    # Message ID is a 24-bit integer spanning bytes 7, 8, and 9
                     msg_id = struct.unpack("<I", data[7:10] + b'\x00')[0]
                     payload_offset = 12
-                    
+
                     if msg_id == 33: # GLOBAL_POSITION_INT
                         pos = MavlinkFrameDecoder.parse_global_position_int(data[payload_offset:])
                         if pos:
@@ -81,11 +74,11 @@ class Suparna5GDrone:
             logger.error(f"Takeoff Rejected: Ground drift {self.telemetry['ground_velocity']}m/s exceeds 0.3m/s safety threshold.")
             return False
         logger.info("[MAVLink Command] Transmitting standard takeoff packet array context (MAV_CMD_NAV_TAKEOFF)")
-        return self._send_mavlink_cmd(22)  # 22 maps strictly to MAV_CMD_NAV_TAKEOFF
+        return self._send_mavlink_cmd(22)
 
     def land(self) -> bool:
         logger.info("[MAVLink Command] Triggering controlled auto-land validation path (MAV_CMD_NAV_LAND)")
-        return self._send_mavlink_cmd(21)  # 21 maps strictly to MAV_CMD_NAV_LAND
+        return self._send_mavlink_cmd(21)
 
     def start_video(self) -> bool:
         logger.info(f"Connecting to onboard payload stream gateway: {DroneConfig.RTSP_STREAM_URL}")
@@ -110,7 +103,6 @@ class Suparna5GDrone:
     def _send_mavlink_cmd(self, command_id: int) -> bool:
         if self._socket:
             try:
-                # Compile a basic command packet format to trigger the flight stack
                 mock_packet = struct.pack("<BBBBBBH", 0xFD, 0x01, 0x00, 0x00, 0x01, command_id, 0x00)
                 self._socket.sendto(mock_packet, (self.drone_ip, self.port))
                 return True
@@ -130,4 +122,4 @@ class Suparna5GDrone:
         return True
 
     def emergency_stop(self) -> bool:
-        return self._send_mavlink_cmd(400)  # Forcing disarm/kill command override
+        return self._send_mavlink_cmd(400)

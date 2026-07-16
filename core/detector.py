@@ -1,7 +1,3 @@
-"""
-core/detector.py - VVDN Laboratory Optimized Inference Layer with PyTorch 2.6+ Fix.
-Source of Truth: DoT 100 5G Labs Architecture Manuals.
-"""
 import logging
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
@@ -29,9 +25,6 @@ class ObjectDetector:
     def _load_model(self) -> None:
         logger.info(f"Loading YOLO framework onto memory matrix path: {self.model_path}")
         try:
-            # --- PYTORCH 2.6+ ULTRALYTICS LOADING MONKEY-PATCH ---
-            # Temporarily intercept torch.load to enforce weights_only=False 
-            # protecting the pipeline against nested pickle unpickler restrictions.
             original_torch_load = torch.load
 
             def safe_torch_load(*args, **kwargs):
@@ -39,15 +32,11 @@ class ObjectDetector:
                 return original_torch_load(*args, **kwargs)
 
             torch.load = safe_torch_load
-            # ----------------------------------------------------
-
-            # Fire initial Ultralytics model compilation state
             self._model = YOLO(self.model_path)
-            
-            # Restore original secure loader mapping immediately after engine allocation
+
             torch.load = original_torch_load
             logger.info("YOLO Engine locked successfully.")
-            
+
         except Exception as e:
             logger.critical(f"Inference engine failed to mount weight allocation: {e}")
             raise RuntimeError(f"Initialization failure on target model weights: {e}") from e

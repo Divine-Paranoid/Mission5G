@@ -1,7 +1,3 @@
-"""
-core/verification.py - VVDN Sensor Fusion Cross-Examination Engine.
-Source of Truth: DoT 100 5G Labs Training Architecture Manuals.
-"""
 import logging
 from enum import Enum
 from typing import List

@@ -1,11 +1,8 @@
-"""
-config.py - Complete & Centralized Configuration Profiles for the VVDN 5G Lab Ecosystem.
-"""
 import os
 
 class SystemConfig:
-    PROJECT_NAME = "VVDN-DoT Mission-Aware Private 5G Drone Orchestration"
-    LOG_LEVEL = 20  # INFO level
+    PROJECT_NAME = "Mission-Aware Private 5G Drone Orchestration"
+    LOG_LEVEL = 20
     LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     LOG_FILE_PATH = "logs/system_orchestrator.log"
 
@@ -24,20 +21,19 @@ class DetectorConfig:
 
 class DroneConfig:
     DRONE_IP = os.getenv("DTU_SUPARNA_DRONE_IP", "10.42.0.1")
-    MAVLINK_PORT = 14550  
+    MAVLINK_PORT = 14550
     RTSP_STREAM_URL = f"rtsp://{DRONE_IP}:10000/drone_cam"
     DEVICE_IMSI = "001010000000001"
     MCC = "001"
     MNC = "01"
 
-# === YAHAN PE HAI FUSION CONFIG ===
 class FusionConfig:
     REQUIRE_EXACT_CLASS_MATCH = True
     DRONE_MIN_CONFIDENCE = 0.50
 
 class NiralConfig:
     MOCK_MODE = False
-    BASE_URL = "http://172.16.0.22" 
+    BASE_URL = "http://172.16.0.22"
     USERNAME = "Anamika@dtu.ac.in"
     PASSWORD = "Dtu@001"
     DEFAULT_APN = "ims"
